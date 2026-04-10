@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: outsystems-migration-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_BASE_URL
+        value: https://cst-ai-proxy.azurewebsites.net/api/anthropic
+      - key: CLAUDE_MODEL
+        value: claude-opus-4-6
+      - key: NODE_ENV
+        value: production
