@@ -8,16 +8,32 @@ type: project
 
 A full-stack web application that takes project documentation as input, sends it to Claude AI, and generates a complete OutSystems migration plan. Supports plan refinement, history persistence, and PowerPoint export.
 
+**Live app:** https://outsystems-migration-tool.vercel.app  
 **GitHub:** https://github.com/Mjelkic/outsystems-migration-tool  
-**Location:** `C:\Users\mjelkic\OneDrive - Deloitte (O365D)\Desktop\Claude\OS Migration\`
+**Local path:** `C:\Users\mjelkic\OneDrive - Deloitte (O365D)\Desktop\Claude\OS Migration\`
 
 **Stack:**
-- Backend: Node.js + Express (port 3001)
-- Frontend: React + Vite (port 5173)
+- Backend: Node.js + Express (port 3001 locally, Render in production)
+- Frontend: React + Vite (port 5173 locally, Vercel in production)
 
 ---
 
-## How to Run
+## Deployment Architecture
+
+| Service | Platform | URL |
+|---|---|---|
+| Frontend | Vercel | https://outsystems-migration-tool.vercel.app |
+| Backend | Render (free tier) | https://outsystems-migration-backend.onrender.com |
+
+- `vercel.json` rewrites `/api/:path*` → Render backend — no frontend code changes between dev and prod
+- `render.yaml` configures the Render service (Node, `backend/` root dir, env vars)
+- Render auto-deploys on push to `master`; Vercel auto-deploys on push to `master`
+- Render free tier cold-starts after 15 min idle (~30s wake-up delay on first request)
+- Vercel serverless timeout (10s) ruled out running the backend on Vercel — Claude calls take 40–80s
+
+---
+
+## How to Run Locally
 
 **Terminal 1 — Backend:**
 ```bash
@@ -39,7 +55,7 @@ Open: **http://localhost:5173**
 
 - **Provider:** Deloitte corporate Azure AI proxy (in front of Anthropic)
 - **Endpoint:** `https://cst-ai-proxy.azurewebsites.net/api/anthropic`
-- **API Key:** `cst-mjelkic-fe5be165` (stored in `backend/.env`)
+- **API Key:** stored in `backend/.env` (locally) and as a Render environment variable (production) — never committed
 - **Model:** `claude-opus-4-6`
 - **Key format:** `cst-...` (not a standard Anthropic `sk-ant-...` key)
 
@@ -57,11 +73,13 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 ```
 
 ### Claude call (`backend/services/claude.js`)
+- Singleton axios client — created once at module load, reused across all requests
 - Uses `axios` directly (not `@anthropic-ai/sdk`)
 - `max_tokens: 8192` — 4096 caused truncation and invalid JSON
 - `model: claude-opus-4-6`
-- System prompt explicitly warns Claude that any character outside `{ }` will throw a SyntaxError — this stops markdown fences reliably
-- JSON parser strips fences and extracts outermost `{ ... }` as fallback
+- System prompt explicitly warns Claude that any character outside `{ }` will throw a SyntaxError — stops markdown fences reliably
+- Shared `parseResponse()` helper strips fences and extracts outermost `{ ... }` — used by both generate and refine
+- Error status uses `err.response?.status` (axios wraps errors — `err.status` is always undefined)
 
 ### Performance
 - Generation takes **~40–80 seconds** for typical documents via the proxy
@@ -82,7 +100,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 - Runs entirely in the browser using `pptxgenjs` v4.0.1
 - Layout: LAYOUT_WIDE (13.33 × 7.5 in)
 - Two density modes: **Compact** (summary tables per section) and **Detailed** (one slide per item)
-- Each content slide has a subtitle line (grey, 9pt) summarising the slide content
+- Each content slide has a subtitle line (grey, 9pt) summarising slide content
 - Deloitte logo embedded as base64 SVG via Vite `?raw` import
 - Colors: pptxgenjs requires hex WITHOUT `#` prefix (e.g. `'86BC24'`)
 - White rectangle placed behind logo on dark-background slides (title, section dividers)
@@ -94,7 +112,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 ```
 OS Migration/
 ├── backend/
-│   ├── server.js             # Express server, 5-min socket timeout
+│   ├── server.js             # Express server, 5-min socket timeout, CORS for *.vercel.app
 │   ├── .env                  # API key + base URL (not committed)
 │   ├── .env.example          # Template
 │   ├── routes/
@@ -102,9 +120,9 @@ OS Migration/
 │   │   ├── generate.js       # Calls Claude, returns plan JSON
 │   │   └── refine.js         # Refines existing plan with additional notes
 │   └── services/
-│       └── claude.js         # axios-based Claude API client
+│       └── claude.js         # Singleton axios client, shared parseResponse helper
 ├── frontend/
-│   ├── vite.config.js        # Proxies /api/* to localhost:3001
+│   ├── vite.config.js        # Proxies /api/* to localhost:3001 in dev
 │   └── src/
 │       ├── App.jsx / App.css # Navigation (Input / Results / History views)
 │       ├── index.css         # CSS variables (Deloitte theme)
@@ -117,6 +135,8 @@ OS Migration/
 │       └── utils/
 │           ├── exportPptx.js # PowerPoint generation
 │           └── storage.js    # localStorage history management
+├── render.yaml               # Render backend deployment config
+├── vercel.json               # Vercel frontend config + /api/* → Render rewrite
 └── claims_management_detailed.txt  # Sample test document
 ```
 
@@ -147,13 +167,12 @@ OS Migration/
 | Plan History | Auto-saved to localStorage, reloadable, deletable |
 | Export JSON | Full plan as `.json` |
 | Export TXT | Human-readable summary as `.txt` |
-| Export PPT | Branded PowerPoint (Compact or Detailed density) |
+| Export PPT | Branded PowerPoint (Compact or Detailed density, dropdown button) |
 
 ---
 
 ## Test File
 
-A working test file exists at:
 ```
 claims_management_detailed.txt
 ```
@@ -173,3 +192,6 @@ Claims Management Application spec — generates in ~75 seconds, produces 6 enti
 | Proxy rejects assistant prefill | Removed prefill, stronger system prompt instead |
 | Model `claude-haiku-4-5-20251001` returns 404 | Only `claude-opus-4-6` available on this proxy |
 | Backend not restarting on file changes | Use `npm run dev` (nodemon) instead of `node server.js` |
+| `err.status` always undefined on axios errors | Fixed to `err.response?.status` — 401/429 handlers now fire |
+| Vercel serverless timeout too short for Claude | Backend deployed on Render; Vercel proxies `/api/*` to it |
+| Render cold-start delay | Free tier only — first request after 15 min idle takes ~30s |

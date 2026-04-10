@@ -2,11 +2,29 @@
 
 A full-stack web application that analyses project documentation and generates a structured OutSystems migration plan using Claude AI.
 
+**Live app:** https://outsystems-migration-tool.vercel.app  
 **GitHub:** https://github.com/Mjelkic/outsystems-migration-tool
 
 ---
 
-## Prerequisites
+## Deployment
+
+The app is split across two services:
+
+| Service | Platform | URL |
+|---|---|---|
+| Frontend (React/Vite) | Vercel | https://outsystems-migration-tool.vercel.app |
+| Backend (Node/Express) | Render | https://outsystems-migration-backend.onrender.com |
+
+Vercel proxies all `/api/*` requests to the Render backend — no frontend code changes needed between local and production.
+
+> **Note:** Render's free tier spins down after 15 minutes of inactivity. The first request after idle takes ~30 seconds to wake up. You can pre-warm it by visiting the [health endpoint](https://outsystems-migration-backend.onrender.com/api/health).
+
+Any push to the `master` branch on GitHub automatically redeploys both services.
+
+---
+
+## Prerequisites (local development)
 
 - [Node.js](https://nodejs.org/) v18 or higher
 - npm (bundled with Node.js)
@@ -26,9 +44,9 @@ OS Migration/
 │   │   ├── generate.js       ← Plan generation via Claude
 │   │   └── refine.js         ← Plan refinement via Claude
 │   └── services/
-│       └── claude.js         ← Axios-based Claude API client
+│       └── claude.js         ← Axios-based Claude API client (singleton)
 ├── frontend/
-│   ├── vite.config.js        ← Proxies /api/* to localhost:3001
+│   ├── vite.config.js        ← Proxies /api/* to localhost:3001 in dev
 │   └── src/
 │       ├── App.jsx / App.css
 │       ├── index.css         ← CSS variables (Deloitte theme)
@@ -41,12 +59,14 @@ OS Migration/
 │       └── utils/
 │           ├── exportPptx.js ← PowerPoint generation (pptxgenjs)
 │           └── storage.js    ← localStorage plan history (max 20 entries)
+├── render.yaml               ← Render backend deployment config
+├── vercel.json               ← Vercel frontend deployment config + API proxy
 └── claims_management_detailed.txt  ← Sample document for testing
 ```
 
 ---
 
-## Setup
+## Local Setup
 
 ### 1. Configure the Backend Environment
 
@@ -83,7 +103,7 @@ cd ../frontend && npm install
 
 ---
 
-## Running the Application
+## Running Locally
 
 Two terminal windows are required simultaneously.
 
@@ -113,8 +133,6 @@ Expected output:
 VITE ready in ...ms
 Local: http://localhost:5173/
 ```
-
-### Open in Browser
 
 Navigate to: **http://localhost:5173**
 
@@ -164,7 +182,7 @@ A working sample document is included:
 claims_management_detailed.txt
 ```
 
-This is a Claims Management Application spec. It generates successfully in ~75 seconds and produces 6 entities, 4 modules, 7 screens, and 5 roadmap phases.
+This is a Claims Management Application spec. It generates in ~75 seconds and produces 6 entities, 4 modules, 7 screens, and 5 roadmap phases.
 
 ---
 
@@ -177,6 +195,8 @@ This is a Claims Management Application spec. It generates successfully in ~75 s
 | `400 Bad Request` from proxy | Invalid API key or model | Check `backend/.env` values |
 | Blank or broken JSON output | Claude returned markdown fences | The parser handles this automatically — retry if it persists |
 | TLS certificate error | Deloitte network TLS inspection | Already handled via `NODE_TLS_REJECT_UNAUTHORIZED=0` |
+| First production request is very slow | Render free tier cold start | Wait ~30s — subsequent requests are normal speed |
+| Production API calls failing | Render service is down | Check https://outsystems-migration-backend.onrender.com/api/health |
 
 ---
 
@@ -187,3 +207,4 @@ This is a Claims Management Application spec. It generates successfully in ~75 s
 - **No assistant prefill:** The proxy returns a 400 error for requests where the messages array ends with an assistant turn.
 - **PPT generation:** Done entirely in the browser using `pptxgenjs`. No server involvement.
 - **History:** Stored in `localStorage` under the key `os-migration-plans`. Plans are matched by project name so re-running the same project overwrites the previous entry.
+- **Split deployment:** Vercel serverless functions have a 10-second timeout — too short for 40–80 second Claude calls. The backend runs on Render (real Node.js process, no timeout limit) and Vercel proxies `/api/*` to it via `vercel.json` rewrites.
