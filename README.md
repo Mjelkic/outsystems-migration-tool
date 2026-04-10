@@ -58,7 +58,7 @@ copy .env.example .env
 Open `backend/.env` and fill in your values:
 
 ```
-ANTHROPIC_API_KEY=cst-mjelkic-fe5be165
+ANTHROPIC_API_KEY=your-api-key-here
 PORT=3001
 ```
 
