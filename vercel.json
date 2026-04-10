@@ -6,5 +6,16 @@
       "source": "/api/:path*",
       "destination": "https://outsystems-migration-backend.onrender.com/api/:path*"
     }
-  ]
+  ],
+  "experimentalServices": {
+    "frontend": {
+      "entrypoint": "frontend",
+      "routePrefix": "/",
+      "framework": "vite"
+    },
+    "backend": {
+      "entrypoint": "backend",
+      "routePrefix": "/_/backend"
+    }
+  }
 }
