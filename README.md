@@ -1,12 +1,12 @@
 # OutSystems Migration Tool
 
-A full-stack web application that analyzes project documentation and generates a structured OutSystems migration plan using Claude AI.
+A full-stack web application that analyses project documentation and generates a structured OutSystems migration plan using Claude AI.
+
+**GitHub:** https://github.com/Mjelkic/outsystems-migration-tool
 
 ---
 
 ## Prerequisites
-
-Make sure the following are installed before proceeding:
 
 - [Node.js](https://nodejs.org/) v18 or higher
 - npm (bundled with Node.js)
@@ -18,21 +18,30 @@ Make sure the following are installed before proceeding:
 ```
 OS Migration/
 ├── backend/
-│   ├── server.js
+│   ├── server.js             ← Express server (port 3001, 5-min socket timeout)
 │   ├── .env                  ← API credentials (you must create this)
 │   ├── .env.example          ← Template for .env
 │   ├── routes/
 │   │   ├── upload.js         ← File upload & text extraction
-│   │   └── generate.js       ← Claude API call & plan generation
+│   │   ├── generate.js       ← Plan generation via Claude
+│   │   └── refine.js         ← Plan refinement via Claude
 │   └── services/
 │       └── claude.js         ← Axios-based Claude API client
-└── frontend/
-    ├── vite.config.js
-    └── src/
-        ├── App.jsx
-        └── pages/
-            ├── InputPage.jsx
-            └── ResultsPage.jsx
+├── frontend/
+│   ├── vite.config.js        ← Proxies /api/* to localhost:3001
+│   └── src/
+│       ├── App.jsx / App.css
+│       ├── index.css         ← CSS variables (Deloitte theme)
+│       ├── assets/
+│       │   └── deloitte-logo.svg
+│       ├── pages/
+│       │   ├── InputPage.jsx / InputPage.css
+│       │   ├── ResultsPage.jsx / ResultsPage.css
+│       │   └── HistoryPage.jsx / HistoryPage.css
+│       └── utils/
+│           ├── exportPptx.js ← PowerPoint generation (pptxgenjs)
+│           └── storage.js    ← localStorage plan history (max 20 entries)
+└── claims_management_detailed.txt  ← Sample document for testing
 ```
 
 ---
@@ -41,70 +50,65 @@ OS Migration/
 
 ### 1. Configure the Backend Environment
 
-The backend requires a `.env` file with your API credentials. A template is provided:
-
 ```bash
 cd backend
 copy .env.example .env
 ```
 
-Then open `backend/.env` and fill in your values:
+Open `backend/.env` and fill in your values:
 
 ```
 ANTHROPIC_API_KEY=cst-mjelkic-fe5be165
 PORT=3001
 ```
 
-> **Note:** This application uses the Deloitte corporate AI proxy (`cst-ai-proxy.azurewebsites.net`), not the standard Anthropic API. The API key format is `cst-...`, not `sk-ant-...`.
+> **Note:** This app uses the Deloitte corporate AI proxy (`cst-ai-proxy.azurewebsites.net`), not the standard Anthropic API. The key format is `cst-...`, not `sk-ant-...`.
 
 ---
 
 ### 2. Install Dependencies
 
-From the project root, install both backend and frontend dependencies in one command:
+From the project root:
 
 ```bash
 npm run install:all
 ```
 
-Or install them separately:
+Or separately:
 
 ```bash
-# Backend
-cd backend
-npm install
-
-# Frontend
-cd ../frontend
-npm install
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
 ---
 
 ## Running the Application
 
-The app requires two terminal windows running simultaneously.
+Two terminal windows are required simultaneously.
 
-### Terminal 1 — Start the Backend
+### Terminal 1 — Backend
 
 ```bash
 cd backend
-node server.js
+npm run dev
 ```
 
-You should see:
+> Uses `nodemon` for auto-restart on file changes. For a plain start: `node server.js`
+
+Expected output:
 ```
 Server running on port 3001
 ```
 
-### Terminal 2 — Start the Frontend
+### Terminal 2 — Frontend
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-You should see:
+Expected output:
 ```
 VITE ready in ...ms
 Local: http://localhost:5173/
@@ -118,33 +122,46 @@ Navigate to: **http://localhost:5173**
 
 ## Using the Application
 
-1. **Upload a document** — Drag and drop or select a file containing your project documentation.
-   - Supported formats: `.pdf`, `.docx`, `.doc`, `.txt`, `.md`
-   - Max file size: 20 MB
+### 1. Generate a Plan
 
-2. **Generate the plan** — Click **Generate Migration Plan**. Processing takes approximately 40–80 seconds via the Deloitte AI proxy.
+- Upload a document (`.pdf`, `.docx`, `.doc`, `.txt`, `.md` — max 20 MB) or paste text directly
+- Enter a project name
+- Click **Generate Migration Plan** — takes ~40–80 seconds
 
-3. **Review the results** — The plan is broken into the following sections:
-   - Project Summary
-   - Data Model (entities, attributes, relationships)
-   - Architecture (modules by layer)
-   - Screens & UI Flows
-   - Business Logic (Server Actions, Client Actions, Timers)
-   - Integrations
-   - Security (roles, auth, sensitive data)
-   - Roadmap (phases, tasks, deliverables, risks)
-   - Recommendations
+The plan is organised into sections:
+- Project Summary
+- Data Model (entities, attributes, relationships)
+- Architecture (modules by layer)
+- Screens & UI Flows
+- Business Logic (Server Actions, Client Actions, Timers)
+- Integrations
+- Security (roles, auth method, sensitive data)
+- Roadmap (phases, tasks, deliverables, risks)
 
-4. **Export** — Download the plan as **JSON** or **TXT**.
+### 2. Refine the Plan
+
+Click **Refine Plan** to open the refinement panel. Type any corrections or missing details (e.g. additional entities, role changes, new integrations) and click **Apply Refinements**. Claude updates the plan while preserving existing content.
+
+### 3. Export
+
+| Format | Description |
+|---|---|
+| **JSON** | Full structured plan as raw JSON |
+| **TXT** | Human-readable summary |
+| **PPT** | PowerPoint presentation with Deloitte branding — click **↓ PPT ▾** and choose **Compact** (summary tables) or **Detailed** (one slide per item) |
+
+### 4. Plan History
+
+Previously generated plans are saved automatically in the browser (localStorage, max 20 entries, matched by project name). Access them via the **History** button in the navigation bar. Plans can be reloaded or deleted.
 
 ---
 
 ## Test File
 
-A working sample document is included for testing:
+A working sample document is included:
 
 ```
-OS Migration/claims_management_detailed.txt
+claims_management_detailed.txt
 ```
 
 This is a Claims Management Application spec. It generates successfully in ~75 seconds and produces 6 entities, 4 modules, 7 screens, and 5 roadmap phases.
@@ -155,17 +172,18 @@ This is a Claims Management Application spec. It generates successfully in ~75 s
 
 | Symptom | Likely Cause | Fix |
 |---|---|---|
-| `ECONNREFUSED` on port 3001 | Backend is not running | Start the backend in Terminal 1 |
-| Request times out after ~2 min | Long generation via proxy | Wait — timeout is set to 5 min |
+| `ECONNREFUSED` on port 3001 | Backend not running | Start the backend in Terminal 1 |
+| Request times out after ~2 min | Long generation via proxy | Wait — timeout is 5 min |
 | `400 Bad Request` from proxy | Invalid API key or model | Check `backend/.env` values |
 | Blank or broken JSON output | Claude returned markdown fences | The parser handles this automatically — retry if it persists |
-| TLS certificate error | Deloitte network TLS check | Already handled via `NODE_TLS_REJECT_UNAUTHORIZED=0` in `server.js` |
+| TLS certificate error | Deloitte network TLS inspection | Already handled via `NODE_TLS_REJECT_UNAUTHORIZED=0` |
 
 ---
 
 ## Technical Notes
 
-- The backend uses `axios` directly instead of the Anthropic SDK. The Deloitte corporate network blocks TLS certificate revocation checks, which the SDK cannot bypass. The `axios` client is configured with `rejectUnauthorized: false`.
-- `max_tokens` is set to `8192`. Values below 4096 caused truncated, invalid JSON responses.
-- The system prompt explicitly instructs Claude to return raw JSON only (no markdown fences), with a fallback parser that strips fences if they appear.
-- The frontend proxies all `/api/*` requests to `localhost:3001` via `vite.config.js`.
+- **Axios over SDK:** The Deloitte corporate network blocks TLS certificate revocation checks. The Anthropic SDK cannot bypass this; the backend uses `axios` with `rejectUnauthorized: false` instead.
+- **`max_tokens: 8192`:** Values below 4096 caused truncated, invalid JSON responses.
+- **No assistant prefill:** The proxy returns a 400 error for requests where the messages array ends with an assistant turn.
+- **PPT generation:** Done entirely in the browser using `pptxgenjs`. No server involvement.
+- **History:** Stored in `localStorage` under the key `os-migration-plans`. Plans are matched by project name so re-running the same project overwrites the previous entry.
