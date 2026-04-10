@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "RENDER_BACKEND_URL/api/:path*"
+      "destination": "https://outsystems-migration-backend.onrender.com/api/:path*"
     }
   ]
 }
