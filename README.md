@@ -134,7 +134,12 @@ VITE ready in ...ms
 Local: http://localhost:5173/
 ```
 
-Navigate to: **http://localhost:5173**
+Navigate to: **http://osmigration.local:5173**
+
+> Requires `127.0.0.1 osmigration.local` in your hosts file (`C:\Windows\System32\drivers\etc\hosts`). Add it by running this in an elevated PowerShell (Run as Administrator):
+> ```powershell
+> Add-Content -Path 'C:\Windows\System32\drivers\etc\hosts' -Value '127.0.0.1 osmigration.local'
+> ```
 
 ---
 
@@ -190,6 +195,7 @@ This is a Claims Management Application spec. It generates in ~75 seconds and pr
 
 | Symptom | Likely Cause | Fix |
 |---|---|---|
+| `osmigration.local` not resolving | Hosts file entry missing | Run the `Add-Content` command in elevated PowerShell |
 | `ECONNREFUSED` on port 3001 | Backend not running | Start the backend in Terminal 1 |
 | Request times out after ~2 min | Long generation via proxy | Wait — timeout is 5 min |
 | `400 Bad Request` from proxy | Invalid API key or model | Check `backend/.env` values |

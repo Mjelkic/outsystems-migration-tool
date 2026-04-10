@@ -47,7 +47,12 @@ cd "C:\Users\mjelkic\OneDrive - Deloitte (O365D)\Desktop\Claude\OS Migration\fro
 npm run dev
 ```
 
-Open: **http://localhost:5173**
+Open: **http://osmigration.local:5173**
+
+> Requires `127.0.0.1 osmigration.local` in `C:\Windows\System32\drivers\etc\hosts`. Add via elevated PowerShell:
+> ```powershell
+> Add-Content -Path 'C:\Windows\System32\drivers\etc\hosts' -Value '127.0.0.1 osmigration.local'
+> ```
 
 ---
 
@@ -66,6 +71,11 @@ Open: **http://localhost:5173**
 ---
 
 ## Key Technical Decisions
+
+### Local dev hostname (`frontend/vite.config.js`)
+- `host: 'osmigration.local'` — Vite binds to this hostname instead of `localhost`
+- Requires a hosts file entry: `127.0.0.1 osmigration.local`
+- Local dev URL: **http://osmigration.local:5173**
 
 ### TLS fix (`backend/server.js`)
 ```js
