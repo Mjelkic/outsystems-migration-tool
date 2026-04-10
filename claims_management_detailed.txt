@@ -1,0 +1,116 @@
+CLAIMS MANAGEMENT APPLICATION – DETAILED FUNCTIONAL SPECIFICATION
+
+1.  OVERVIEW The Claims Management Application is designed to manage the
+    full lifecycle of claims, including claim creation, validation,
+    processing, and closure. It supports management of Claimants and
+    Subclaims, ensuring traceability, auditability, and scalability.
+
+2.  CORE ENTITIES
+
+2.1 Claim - ClaimId (AutoNumber, Primary Key) - ClaimNumber (Text,
+Unique) - ClaimType (Text) - ClaimDate (Date) - IncidentDate (Date) -
+Description (Text) - StatusId (FK to Status) - TotalAmount (Decimal) -
+AssignedTo (UserId) - CreatedOn (DateTime) - CreatedBy (UserId) -
+UpdatedOn (DateTime) - UpdatedBy (UserId)
+
+2.2 Claimant - ClaimantId (AutoNumber, Primary Key) - FirstName (Text) -
+LastName (Text) - DateOfBirth (Date) - IdentificationNumber (Text) -
+Email (Text) - Phone (Text) - Address (Text) - ClaimantType (Text:
+Individual/Company)
+
+2.3 Subclaim - SubclaimId (AutoNumber, Primary Key) - ClaimId (FK) -
+SubclaimType (Text) - Description (Text) - Amount (Decimal) - StatusId
+(FK to Status) - AssignedTo (UserId)
+
+2.4 Claim_Claimant (Join Table) - Id (AutoNumber) - ClaimId (FK) -
+ClaimantId (FK)
+
+2.5 Status (Static Entity) - StatusId - Name (Draft, Submitted, Under
+Review, Approved, Rejected, Closed)
+
+3.  RELATIONSHIPS
+
+-   Claim (1) to Subclaim (N)
+-   Claim (N) to Claimant (N) via Claim_Claimant
+-   User (1) to Claim (N)
+-   User (1) to Subclaim (N)
+
+4.  BUSINESS RULES
+
+-   A claim must have at least one claimant before submission
+-   Claim must include Description and IncidentDate before submission
+-   Subclaim Amount must be greater than zero
+-   Claim TotalAmount = sum of Subclaim Amounts
+-   Claim status updates based on subclaim statuses
+
+5.  BUSINESS LOGIC
+
+5.1 Create Claim - Initializes claim with Draft status - Generates
+ClaimNumber - Stores audit fields
+
+5.2 Submit Claim - Validates required fields - Ensures at least one
+claimant exists - Changes status to Submitted
+
+5.3 Assign Claim - Assigns claim to a handler - Updates AssignedTo field
+
+5.4 Create Subclaim - Associates subclaim with claim - Sets default
+status
+
+5.5 Approve/Reject Subclaim - Updates subclaim status - Triggers
+recalculation of claim total and status
+
+5.6 Calculate Claim Total - Aggregates all subclaim amounts - Updates
+Claim.TotalAmount
+
+5.7 Update Claim Status - If all subclaims approved → Claim Approved -
+If any rejected → Claim Partially Approved or Rejected
+
+6.  UI STRUCTURE
+
+6.1 Claim Screens - Claim List (filters: status, type, date) - Claim
+Detail (tabs: Overview, Claimants, Subclaims, Documents) - Create/Edit
+Claim
+
+6.2 Claimant Screens - Claimant List - Claimant Detail - Create/Edit
+Claimant
+
+6.3 Subclaim Screens - Subclaim List (filtered by claim) - Subclaim
+Detail - Create/Edit Subclaim
+
+7.  ROLES & PERMISSIONS
+
+-   Admin: Full access
+-   Claims Handler: Manage claims and subclaims
+-   Viewer: Read-only
+
+8.  DOCUMENT MANAGEMENT
+
+-   Upload documents to claims and subclaims
+-   Metadata:
+    -   FileName
+    -   UploadDate
+    -   UploadedBy
+
+9.  AUDIT & LOGGING
+
+-   Track all status changes
+-   Store:
+    -   ChangedBy
+    -   ChangedOn
+    -   OldValue
+    -   NewValue
+
+10. INTEGRATIONS (OPTIONAL)
+
+-   Policy systems
+-   Payment processing
+-   Fraud detection APIs
+
+11. FUTURE ENHANCEMENTS
+
+-   AI-based fraud detection
+-   Claim prioritization scoring
+-   Workflow automation (BPT)
+-   Real-time dashboards
+
+END OF DOCUMENT

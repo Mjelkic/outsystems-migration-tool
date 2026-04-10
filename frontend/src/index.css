@@ -1,0 +1,48 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* ── Deloitte Core Brand ── */
+  --d-green:      #86BC24;
+  --d-green-dark: #6a9a1c;   /* hover/active state */
+  --d-green-lt:   #f0f7e0;   /* subtle green tint for backgrounds */
+  --d-black:      #000000;
+  --d-white:      #ffffff;
+
+  /* ── Greyscale UI ── */
+  --bg:        #f2f2f2;       /* page background */
+  --surface:   #ffffff;       /* cards, panels */
+  --surface2:  #f7f7f7;       /* inset areas, inputs */
+  --border:    #d9d9d9;
+  --border-lt: #ebebeb;
+
+  /* ── Typography ── */
+  --text:       #000000;
+  --text-muted: #666666;
+  --text-light: #999999;
+
+  /* ── Semantic ── */
+  --success: #86BC24;
+  --warning: #f5a623;
+  --danger:  #cc3333;
+
+  --radius:    4px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow:    0 2px 8px rgba(0,0,0,0.12);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.16);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--d-green); }
+
+button { cursor: pointer; font-family: inherit; }
+input, textarea { font-family: inherit; }

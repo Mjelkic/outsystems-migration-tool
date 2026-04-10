@@ -1,0 +1,89 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Header ───────────────────────────────── */
+.app-header {
+  background: var(--d-black);
+  border-bottom: 3px solid var(--d-green);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon { font-size: 1.3rem; }
+
+.logo-text {
+  font-size: 1.05rem;
+  color: var(--d-white);
+  letter-spacing: 0.01em;
+  font-weight: 400;
+}
+
+.logo-text strong {
+  color: var(--d-green);
+  font-weight: 700;
+}
+
+.header-nav { display: flex; gap: 6px; }
+
+.nav-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.65);
+  padding: 6px 16px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.nav-btn:hover {
+  color: var(--d-white);
+  border-color: rgba(255,255,255,0.5);
+}
+
+.nav-btn.active {
+  background: var(--d-green);
+  color: var(--d-black);
+  border-color: var(--d-green);
+  font-weight: 700;
+}
+
+/* ── Main ─────────────────────────────────── */
+.app-main {
+  flex: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 36px 24px;
+}
+
+/* ── Footer ───────────────────────────────── */
+.app-footer {
+  text-align: center;
+  padding: 14px 24px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
